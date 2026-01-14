@@ -113,33 +113,15 @@ if uploaded_file is not None:
         progress_bar = st.progress(0)
         status_text = st.empty()
 
-        with st.spinner("Evaluating submission... This may take up to 90 seconds on Cloud Run"):
+        with st.spinner("Evaluating submission... This may take ~20 seconds"):
             status_text.text("Processing 14 days of simulation...")
             progress_bar.progress(30)
 
-            # Run simulation with timeout handling
-            import signal
+            # Run simulation
+            result = simulate_with_breakdown(submission, DATA_DIR)
 
-            def timeout_handler(signum, frame):
-                raise TimeoutError("Evaluation took too long (>90 seconds)")
-
-            try:
-                # Set 90 second timeout (only works on Unix)
-                signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(90)
-
-                result = simulate_with_breakdown(submission, DATA_DIR)
-
-                signal.alarm(0)  # Cancel alarm
-
-                progress_bar.progress(100)
-                status_text.text("✓ Evaluation complete!")
-            except TimeoutError as e:
-                st.error("⏱️ Evaluation timed out after 90 seconds. The file may be too large or have formatting issues.")
-                st.stop()
-            except Exception as e:
-                signal.alarm(0)  # Cancel alarm on error
-                raise e
+            progress_bar.progress(100)
+            status_text.text("✓ Evaluation complete!")
 
         # Display results
         st.markdown("---")
